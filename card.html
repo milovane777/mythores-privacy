@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Mythores</title>
+<style>
+  :root { color-scheme: light dark; --page:#FBF6F1; --panel:#FFFFFF; --ink:#2B2430; --soft:#6B5E6B;
+          --rule:#E8DFE6; --good:#2F8F6B; --good-bg:#E0F0E9; --bad:#8A3030; --bad-bg:#F3E2E2; --tier:#D9D2D9; }
+  @media (prefers-color-scheme: dark) { :root { --page:#1E1A1E; --panel:#2A242A; --ink:#F2ECF2; --soft:#BDB1BD;
+          --rule:#3A323A; --good:#5FCBA0; --good-bg:#182E26; --bad:#E88A8A; --bad-bg:#341F1F; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink);
+         font:16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Hiragino Sans", "PingFang SC", sans-serif; }
+  main { max-width:30rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
+  .card { background:var(--panel); border:3px solid var(--tier); border-radius:18px; padding:1rem 1rem 1.25rem;
+          box-shadow:0 10px 30px -18px rgba(0,0,0,.45); }
+  .art { background:color-mix(in srgb, var(--tier) 22%, var(--panel)); border-radius:12px; padding:1rem;
+         display:flex; justify-content:center; }
+  .art svg { width:100%; max-width:15rem; height:auto; image-rendering:pixelated; }
+  h1 { font-size:1.5rem; margin:.9rem 0 0; line-height:1.2; overflow-wrap:anywhere; }
+  .stars { color:var(--tier); letter-spacing:.1em; }
+  .meta { color:var(--soft); font-size:.92rem; margin:.25rem 0 .75rem; }
+  .status { display:inline-block; font-weight:700; font-size:.95rem; padding:.3rem .7rem; border-radius:8px; }
+  .ok { background:var(--good-bg); color:var(--good); }
+  .bad { background:var(--bad-bg); color:var(--bad); }
+  .wait { background:var(--rule); color:var(--soft); }
+  dl { display:grid; grid-template-columns:max-content 1fr; gap:.2rem 1rem; margin:.9rem 0 0; font-size:.92rem; }
+  dt { color:var(--soft); } dd { margin:0; overflow-wrap:anywhere; }
+  .note { color:var(--soft); font-size:.85rem; margin-top:.6rem; }
+  .get { margin-top:1.5rem; text-align:center; }
+  .get p { margin:.25rem 0 .9rem; }
+  .btn { display:inline-block; margin:.25rem; padding:.7rem 1.2rem; border-radius:12px; background:var(--ink); color:var(--panel);
+         text-decoration:none; font-weight:700; }
+  footer { margin-top:2.5rem; color:var(--soft); font-size:.8rem; text-align:center; }
+  footer a { color:inherit; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card" id="card" hidden>
+    <div class="art" id="art"></div>
+    <h1 id="name"></h1>
+    <div class="meta"><span class="stars" id="stars"></span> <span id="line"></span></div>
+    <span class="status wait" id="status"></span>
+    <dl id="facts"></dl>
+    <p class="note" id="nameNote"></p>
+  </div>
+  <p id="empty" hidden></p>
+  <div class="get">
+    <p id="getLine"></p>
+    <a class="btn" id="play" hidden>Google Play</a>
+    <a class="btn" id="appstore" hidden>App Store</a>
+  </div>
+  <footer><span id="privacy"></span> · <a href="./">Privacy</a> · <a href="support.html">Support</a></footer>
+</main>
+<script src="verify.js"></script>
+<script src="card-link.js"></script>
+<script>
+// Store pages. The App Store id is only known once the app is listed; until
+// then its button stays hidden rather than pointing somewhere wrong.
+const PLAY = 'https://play.google.com/store/apps/details?id=com.anotherlevelstudio.mythores'
+  + '&referrer=utm_source%3Dcard_link%26utm_medium%3Dshare';
+const APP_STORE = '';
+
+const TEXT = {
+  ko: { checking:'서명을 확인하는 중…', ok:'진품 — 모든 서명이 확인됐어요', bad:'확인되지 않았어요',
+        hands:'거쳐 온 손', grades:'감정', witnesses:'방명록', id:'번호', born:'태어난 곳',
+        nameNote:'이름은 보낸 사람이 붙인 것이라 서명에 들어 있지 않아요.',
+        empty:'카드가 들어 있지 않은 링크예요.', get:'오프라인에서 기르고, 선물로 주고받는 펫 수집 게임',
+        privacy:'링크의 # 뒤 내용은 서버로 가지 않고, 확인은 이 브라우저 안에서만 해요.', none:'없음' },
+  en: { checking:'Checking signatures…', ok:'Genuine — every signature checks out', bad:'Could not be verified',
+        hands:'Hands', grades:'Grades', witnesses:'Guestbook', id:'Number', born:'Born in',
+        nameNote:'The name was given by whoever sent this, so it is not part of the signature.',
+        empty:'There is no card in this link.', get:'A pet-collecting game you raise offline and share as gifts',
+        privacy:'Nothing after the # in this link goes to a server; the checking happens in your browser.', none:'none' },
+  ja: { checking:'署名を確認しています…', ok:'本物 — すべての署名を確認しました', bad:'確認できませんでした',
+        hands:'渡ってきた手', grades:'鑑定', witnesses:'芳名帳', id:'番号', born:'生まれ',
+        nameNote:'名前は送った人がつけたもので、署名には含まれていません。',
+        empty:'このリンクにはカードが入っていません。', get:'オフラインで育てて、プレゼントで贈り合うペット収集ゲーム',
+        privacy:'リンクの # のあとはサーバーに送られず、確認はこのブラウザの中だけで行います。', none:'なし' },
+  es: { checking:'Comprobando firmas…', ok:'Auténtico: todas las firmas son válidas', bad:'No se pudo verificar',
+        hands:'Manos', grades:'Valoraciones', witnesses:'Visitas', id:'Número', born:'Nació en',
+        nameNote:'El nombre lo puso quien lo envió, así que no forma parte de la firma.',
+        empty:'Este enlace no contiene ninguna carta.', get:'Un juego de coleccionar mascotas que crías sin conexión y compartes como regalo',
+        privacy:'Lo que va después del # no se envía a ningún servidor; la comprobación se hace en tu navegador.', none:'ninguna' },
+  zh: { checking:'正在验证签名…', ok:'真品——所有签名均已验证', bad:'无法验证',
+        hands:'经手', grades:'鉴定', witnesses:'留名', id:'编号', born:'出生地',
+        nameNote:'名字是发送者起的，不在签名之内。',
+        empty:'这个链接里没有卡片。', get:'离线养成、以礼物互赠的宠物收集游戏',
+        privacy:'链接中 # 之后的内容不会发送到服务器，验证只在你的浏览器中进行。', none:'无' },
+};
+const TIER_COLOUR = { common:'#D9D2D9', uncommon:'#6FBF8B', rare:'#B89B4E', epic:'#2FA8C8', legendary:'#9B6BFF', mythic:'#E0457B' };
+const NEXT = { common:'uncommon', uncommon:'rare', rare:'epic', epic:'legendary', legendary:'mythic', mythic:'mythic' };
+
+const lang = (navigator.languages || [navigator.language || 'en'])
+  .map(l => l.toLowerCase().slice(0, 2)).find(l => TEXT[l]) || 'en';
+const t = TEXT[lang];
+document.documentElement.lang = lang;
+const $ = id => document.getElementById(id);
+$('getLine').textContent = t.get;
+$('privacy').textContent = t.privacy;
+$('play').href = PLAY; $('play').hidden = false;
+if (APP_STORE) { $('appstore').href = APP_STORE; $('appstore').hidden = false; }
+
+(async () => {
+  const link = await MythoresCardLink.read(location.hash);
+  if (!link) { $('empty').textContent = t.empty; $('empty').hidden = false; return; }
+  const [registry, names] = await Promise.all([
+    fetch('registry-v1.json').then(r => r.json()),
+    fetch('names.json').then(r => r.json()),
+  ]);
+  const n = names[lang] || names.en;
+  const doc = link.doc;
+  const tier = doc.awakening ? NEXT[doc.rarity] : doc.rarity;
+  const stars = (registry.rarities.find(r => r.key === tier) || { stars: 1 }).stars;
+  document.documentElement.style.setProperty('--tier', TIER_COLOUR[tier] || TIER_COLOUR.common);
+  $('name').textContent = link.name || (n.species[doc.species] || doc.species);
+  document.title = `${$('name').textContent} · Mythores`;
+  $('stars').textContent = '★'.repeat(stars);
+  $('line').textContent = [n.species[doc.species], n.rarity[tier], doc.season,
+    doc.marking && doc.marking !== 'plain' ? n.marking[doc.marking] : null].filter(Boolean).join(' · ');
+  $('nameNote').textContent = link.name ? t.nameNote : '';
+  $('status').textContent = t.checking;
+  try { $('art').innerHTML = MythoresToken.svg(MythoresToken.compose(doc, registry)); } catch (_) {}
+  $('card').hidden = false;
+
+  const v = await MythoresToken.verify(doc, registry);
+  $('status').className = 'status ' + (v.ok ? 'ok' : 'bad');
+  $('status').textContent = v.ok ? t.ok : t.bad;
+  const facts = [
+    [t.id, doc.id],
+    [t.born, doc.region ? n.region[doc.region] : t.none],
+    [t.hands, String(1 + (Array.isArray(doc.provenance) ? doc.provenance.length : 0))],
+    [t.grades, String(Array.isArray(doc.grades) ? doc.grades.length : 0)],
+    [t.witnesses, String(v.witnesses || 0)],
+  ];
+  $('facts').replaceChildren(...facts.flatMap(([k, val]) => {
+    const dt = document.createElement('dt'); dt.textContent = k;
+    const dd = document.createElement('dd'); dd.textContent = val;
+    return [dt, dd];
+  }));
+})();
+</script>
+</body>
+</html>
