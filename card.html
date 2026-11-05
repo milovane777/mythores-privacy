@@ -91,14 +91,41 @@ const TEXT = {
         nameNote:'名字是发送者起的，不在签名之内。',
         empty:'这个链接里没有卡片。', get:'离线养成、以礼物互赠的宠物收集游戏',
         privacy:'链接中 # 之后的内容不会发送到服务器，验证只在你的浏览器中进行。', none:'无' },
+  pt: { checking:'Verificando assinaturas…', ok:'Autêntico — todas as assinaturas conferem', bad:'Não foi possível verificar',
+        hands:'Mãos', grades:'Avaliações', witnesses:'Livro de visitas', id:'Número', born:'Nasceu em',
+        nameNote:'O nome foi dado por quem enviou, então não faz parte da assinatura.',
+        empty:'Este link não tem nenhum card.', get:'Um jogo de colecionar pets que você cria offline e compartilha como presente',
+        privacy:'Nada depois do # deste link vai para um servidor; a verificação acontece no seu navegador.', none:'nenhum' },
+  de: { checking:'Signaturen werden geprüft…', ok:'Echt — alle Signaturen stimmen', bad:'Konnte nicht bestätigt werden',
+        hands:'Hände', grades:'Bewertungen', witnesses:'Gästebuch', id:'Nummer', born:'Geboren in',
+        nameNote:'Den Namen hat der Absender vergeben, er ist nicht Teil der Signatur.',
+        empty:'In diesem Link steckt keine Karte.', get:'Ein Sammelspiel mit Tierfreunden, die du offline großziehst und verschenkst',
+        privacy:'Nichts hinter dem # dieses Links geht an einen Server; geprüft wird nur in deinem Browser.', none:'keine' },
+  fr: { checking:'Vérification des signatures…', ok:'Authentique — toutes les signatures sont valides', bad:'Impossible à vérifier',
+        hands:'Mains', grades:'Notes', witnesses:'Livre d’or', id:'Numéro', born:'Né à',
+        nameNote:'Le nom a été donné par l’expéditeur, il ne fait pas partie de la signature.',
+        empty:'Ce lien ne contient aucune carte.', get:'Un jeu de collection d’animaux que tu élèves hors ligne et que tu offres',
+        privacy:'Rien après le # de ce lien n’est envoyé à un serveur ; la vérification se fait dans ton navigateur.', none:'aucune' },
+  zh_Hant: { checking:'正在驗證簽名…', ok:'真品——所有簽名均已驗證', bad:'無法驗證',
+        hands:'經手', grades:'鑑定', witnesses:'留名', id:'編號', born:'出生地',
+        nameNote:'名字是寄送者取的，不在簽名之內。',
+        empty:'這個連結裡沒有卡片。', get:'離線養成、以禮物互贈的寵物收集遊戲',
+        privacy:'連結中 # 之後的內容不會傳送到伺服器，驗證只在你的瀏覽器中進行。', none:'無' },
 };
 const TIER_COLOUR = { common:'#D9D2D9', uncommon:'#6FBF8B', rare:'#B89B4E', epic:'#2FA8C8', legendary:'#9B6BFF', mythic:'#E0457B' };
 const NEXT = { common:'uncommon', uncommon:'rare', rare:'epic', epic:'legendary', legendary:'mythic', mythic:'mythic' };
 
+// Traditional Chinese by script or by place (zh-Hant, zh-TW, zh-HK, zh-MO),
+// the same rule the app uses.
+const langOf = tag => {
+  const t = tag.toLowerCase();
+  if (t.startsWith('zh')) return /hant|-tw|-hk|-mo/.test(t) ? 'zh_Hant' : 'zh';
+  return t.slice(0, 2);
+};
 const lang = (navigator.languages || [navigator.language || 'en'])
-  .map(l => l.toLowerCase().slice(0, 2)).find(l => TEXT[l]) || 'en';
+  .map(langOf).find(l => TEXT[l]) || 'en';
 const t = TEXT[lang];
-document.documentElement.lang = lang;
+document.documentElement.lang = lang.replace('_', '-');
 const $ = id => document.getElementById(id);
 $('getLine').textContent = t.get;
 $('privacy').textContent = t.privacy;
